@@ -47,6 +47,65 @@
     return escapeHtml(value).replace(/\n/g, '<br>');
   };
 
+  const renderRichTextOrDash = (value) => {
+    if (value === undefined || value === null || value === '') {
+      return '-';
+    }
+
+    const allowedTags = {
+      A: true,
+      B: true,
+      BR: true,
+      DIV: true,
+      EM: true,
+      I: true,
+      LI: true,
+      OL: true,
+      P: true,
+      SPAN: true,
+      STRONG: true,
+      U: true,
+      UL: true
+    };
+
+    const renderNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return escapeHtml(node.textContent);
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return '';
+      }
+
+      const tagName = node.tagName.toUpperCase();
+      const children = Array.from(node.childNodes).map(renderNode).join('');
+
+      if (!allowedTags[tagName]) {
+        return children;
+      }
+
+      if (tagName === 'BR') {
+        return '<br>';
+      }
+
+      if (tagName === 'A') {
+        const href = node.getAttribute('href') || '';
+        const isSafeHref = /^(https?:|mailto:)/i.test(href);
+        const hrefAttribute = isSafeHref
+          ? ' href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer"'
+          : '';
+        return '<a' + hrefAttribute + '>' + children + '</a>';
+      }
+
+      return '<' + tagName.toLowerCase() + '>' + children + '</' + tagName.toLowerCase() + '>';
+    };
+
+    const template = document.createElement('template');
+    template.innerHTML = String(value);
+    const html = Array.from(template.content.childNodes).map(renderNode).join('');
+    return html || '-';
+  };
+
   // Raw JSON 表示用の整形済み文字列。
   const toPrettyJson = (value) => escapeHtml(JSON.stringify(value, null, 2));
 
@@ -977,9 +1036,21 @@
         ]
       ) +
       '<div class="notes-block">' +
-      multilineOrDash(sectionResult.data.content) +
+      renderRichTextOrDash(sectionResult.data.content) +
       '</div>' +
       renderRawJson(sectionResult, includeRawJson)
+    );
+  };
+
+  const renderAppPurposeSection = (sectionResult) => {
+    if (!sectionResult.ok) {
+      return renderErrorCard(sectionResult);
+    }
+
+    return (
+      '<div class="purpose-block">' +
+      renderRichTextOrDash(sectionResult.data.content) +
+      '</div>'
     );
   };
 
@@ -1099,11 +1170,9 @@
       );
     }
 
-    if (config.includeAdminNotes) {
-      tasks.adminNotes = collectSection('アプリ管理者メモ', () =>
-        apiGet(previewPath('/k/v1/app/adminNotes.json', usePreview), { app: appId })
-      );
-    }
+    tasks.adminNotes = collectSection('アプリ管理者メモ', () =>
+      apiGet(previewPath('/k/v1/app/adminNotes.json', usePreview), { app: appId })
+    );
 
     const entries = await Promise.all(
       Object.keys(tasks).map(async (key) => [key, await tasks[key]])
@@ -1145,6 +1214,50 @@
     );
   };
 
+  const buildDocumentSections = (config) => {
+    const sections = [
+      { id: 'app-purpose', title: 'このアプリの目的' },
+      { id: 'summary', title: 'サマリー' },
+      { id: 'fields', title: 'フィールド一覧' },
+      { id: 'external-relations', title: '他アプリ連携' },
+      { id: 'layout', title: 'レイアウト' },
+      { id: 'views', title: '一覧設定' },
+      { id: 'process', title: 'プロセス管理' }
+    ];
+
+    if (config.includePermissions) {
+      sections.push({ id: 'permissions', title: '権限' });
+    }
+
+    if (config.includeNotifications) {
+      sections.push({ id: 'notifications', title: '通知' });
+    }
+
+    if (config.includeCustomization) {
+      sections.push({ id: 'customization', title: 'カスタマイズ' });
+    }
+
+    if (config.includeAdminNotes) {
+      sections.push({ id: 'admin-notes', title: 'アプリ管理者メモ' });
+    }
+
+    return sections;
+  };
+
+  const renderTableOfContents = (sections) =>
+    '<section class="toc" aria-labelledby="toc-heading"><h2 id="toc-heading">目次</h2><ol>' +
+    sections
+      .map(
+        (section) =>
+          '<li><a href="#' +
+          escapeHtml(section.id) +
+          '">' +
+          escapeHtml(section.title) +
+          '</a></li>'
+      )
+      .join('') +
+    '</ol></section>';
+
   // 設計書全体の HTML を 1 つの文字列として組み立てる。
   // セクションの出し分けもここで行う。
   const buildHtmlDocument = (results, config) => {
@@ -1155,6 +1268,7 @@
         : results.appInfo.ok && results.appInfo.data.name
           ? results.appInfo.data.name
           : 'kintone App';
+    const documentSections = buildDocumentSections(config);
 
     let html = '';
     html += '<!doctype html><html lang="ja"><head><meta charset="utf-8">';
@@ -1179,6 +1293,7 @@
       '.hero-meta span{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.12);}';
     html +=
       'section{margin-top:24px;padding:28px;background:#fff;border:1px solid #dbe5ef;border-radius:18px;box-shadow:0 10px 30px rgba(16,42,67,.05);}';
+    html += 'section{scroll-margin-top:18px;}';
     html += 'h2{margin:0 0 16px;font-size:24px;line-height:1.3;}';
     html += 'h3{margin:24px 0 12px;font-size:18px;}';
     html +=
@@ -1199,6 +1314,10 @@
     html += 'code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#eef3f8;padding:2px 6px;border-radius:6px;}';
     html += 'code{display:inline-block;max-width:100%;overflow-wrap:anywhere;}';
     html += '.muted{color:#637487;}';
+    html += '.toc ol{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 18px;margin:0;padding-left:22px;}';
+    html += '.toc li{padding-left:2px;}';
+    html += '.toc a{color:#17405d;font-weight:700;text-decoration:none;}';
+    html += '.toc a:hover{text-decoration:underline;}';
     html += '.table-wrap--summary table,.table-wrap--fields table,.table-wrap--relations table{table-layout:fixed;}';
     html += '.table--summary td:first-child{white-space:nowrap;word-break:keep-all;}';
     html += '.table--summary td:last-child{white-space:normal;}';
@@ -1216,6 +1335,12 @@
       '.error-card{padding:14px 16px;background:#fff6f6;border:1px solid #f1c4c4;border-radius:12px;color:#8a1f1f;}';
     html +=
       '.notes-block{margin-top:14px;padding:16px;background:#f7fafc;border:1px solid #dbe5ef;border-radius:12px;white-space:normal;}';
+    html +=
+      '.purpose-block{padding:16px;background:#f7fafc;border:1px solid #dbe5ef;border-radius:12px;white-space:normal;}';
+    html += '.notes-block p,.notes-block div,.purpose-block p,.purpose-block div{margin:0 0 10px;}';
+    html += '.notes-block p:last-child,.notes-block div:last-child,.purpose-block p:last-child,.purpose-block div:last-child{margin-bottom:0;}';
+    html += '.notes-block ol,.notes-block ul,.purpose-block ol,.purpose-block ul{margin:8px 0 12px;padding-left:24px;}';
+    html += '.notes-block a,.purpose-block a{color:#17405d;font-weight:700;}';
     html += '.raw-json{margin-top:16px;}';
     html +=
       '.raw-json summary{cursor:pointer;color:#17405d;font-weight:700;}';
@@ -1233,7 +1358,7 @@
     html +=
       '<p>' +
       escapeHtml(appName) +
-      ' の設定情報をHTML設計書として出力したサンプルです。</p>';
+      ' の設定情報をHTML設計書として出力したファイルです。</p>';
     html += '<div class="hero-meta">';
     html += '<span>アプリID: ' + escapeHtml(String(appId)) + '</span>';
     html +=
@@ -1244,31 +1369,33 @@
       '<span>出力日時: ' + escapeHtml(new Date().toLocaleString()) + '</span>';
     html += '</div></div>';
     html += renderErrorSummary(results);
-    html += '<section><h2>サマリー</h2>' + renderSummarySection(results, config) + '</section>';
+    html += renderTableOfContents(documentSections);
+    html += '<section id="app-purpose"><h2>このアプリの目的</h2>' + renderAppPurposeSection(results.adminNotes) + '</section>';
+    html += '<section id="summary"><h2>サマリー</h2>' + renderSummarySection(results, config) + '</section>';
     html +=
-      '<section><h2>フィールド一覧</h2>' +
+      '<section id="fields"><h2>フィールド一覧</h2>' +
       renderFieldsSection(results.formFields, config.includeRawJson) +
       '</section>';
     html +=
-      '<section><h2>他アプリ連携</h2>' +
+      '<section id="external-relations"><h2>他アプリ連携</h2>' +
       renderExternalAppRelationsSection(results.formFields) +
       '</section>';
     html +=
-      '<section><h2>レイアウト</h2>' +
+      '<section id="layout"><h2>レイアウト</h2>' +
       renderLayoutSection(results.formLayout, config.includeRawJson) +
       '</section>';
     html +=
-      '<section><h2>一覧設定</h2>' +
+      '<section id="views"><h2>一覧設定</h2>' +
       renderViewsSection(results.views, config.includeRawJson) +
       '</section>';
     html +=
-      '<section><h2>プロセス管理</h2>' +
+      '<section id="process"><h2>プロセス管理</h2>' +
       renderProcessSection(results.processManagement, config.includeRawJson) +
       '</section>';
 
     if (config.includePermissions) {
       html +=
-        '<section><h2>権限</h2>' +
+        '<section id="permissions"><h2>権限</h2>' +
         renderPermissionsSection(
           {
             app: results.appPermissions,
@@ -1282,7 +1409,7 @@
 
     if (config.includeNotifications) {
       html +=
-        '<section><h2>通知</h2>' +
+        '<section id="notifications"><h2>通知</h2>' +
         renderNotificationsSection(
           {
             general: results.generalNotifications,
@@ -1296,7 +1423,7 @@
 
     if (config.includeCustomization) {
       html +=
-        '<section><h2>カスタマイズ</h2>' +
+        '<section id="customization"><h2>カスタマイズ</h2>' +
         renderCustomizationSection(
           {
             customization: results.customization,
@@ -1309,7 +1436,7 @@
 
     if (config.includeAdminNotes) {
       html +=
-        '<section><h2>アプリ管理者メモ</h2>' +
+        '<section id="admin-notes"><h2>アプリ管理者メモ</h2>' +
         renderAdminNotesSection(results.adminNotes, config.includeRawJson) +
         '</section>';
     }

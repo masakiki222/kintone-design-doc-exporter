@@ -76,10 +76,10 @@ kintone-design-doc-exporter-plugin-v{version}.zip
 ./scripts/package-plugin.sh
 ```
 
-たとえば `manifest.json` の `version` が `0.2.2` の場合、次のファイルを生成します。
+たとえば `manifest.json` の `version` が `0.2.4` の場合、次のファイルを生成します。
 
 ```text
-/Users/masaki/Documents/Codex/kintone-design-doc-exporter-plugin-v0.2.2.zip
+/Users/masaki/Documents/Codex/kintone-design-doc-exporter-plugin-v0.2.4.zip
 ```
 
 ## 導入手順
