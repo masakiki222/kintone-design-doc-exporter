@@ -1,0 +1,24 @@
+{
+  "manifest_version": 1,
+  "version": "0.2.0",
+  "type": "APP",
+  "name": {
+    "ja": "設計書エクスポート",
+    "en": "Design Doc Exporter"
+  },
+  "description": {
+    "ja": "アプリ設定を収集してHTMLの設計書として出力します。",
+    "en": "Collect app settings and export them as an HTML design document."
+  },
+  "icon": "image/icon.png",
+  "config": {
+    "html": "html/config.html",
+    "js": [
+      "js/desktop.js",
+      "js/config.js"
+    ],
+    "css": [
+      "css/config.css"
+    ]
+  }
+}

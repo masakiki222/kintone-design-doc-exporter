@@ -1,0 +1,113 @@
+.settings {
+  box-sizing: border-box;
+  max-width: 960px;
+  margin: 24px auto;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid #d9e1ea;
+  border-radius: 12px;
+}
+
+.settings-heading {
+  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 1.3;
+}
+
+.settings-description {
+  margin: 0 0 28px;
+  color: #49576a;
+  line-height: 1.7;
+}
+
+.section-heading {
+  margin: 0 0 16px;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.settings-form .kintoneplugin-row {
+  margin-bottom: 24px;
+}
+
+.field-help {
+  margin: 8px 0 0;
+  color: #66788a;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.checkbox-list {
+  display: grid;
+  gap: 10px;
+}
+
+.kintoneplugin-input-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #24323f;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.export-panel {
+  margin-top: 40px;
+  padding: 24px;
+  background: #f7fafc;
+  border: 1px solid #d9e1ea;
+  border-radius: 12px;
+}
+
+.export-description {
+  margin: 0 0 12px;
+  color: #49576a;
+  line-height: 1.7;
+}
+
+.export-note {
+  margin: 0;
+  padding: 14px 16px;
+  color: #36506b;
+  line-height: 1.7;
+  background: #fff;
+  border: 1px solid #d9e1ea;
+  border-radius: 10px;
+}
+
+.export-note.is-warning {
+  color: #7a4b00;
+  background: #fff7e6;
+  border-color: #f2d4a3;
+}
+
+.status-message {
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  line-height: 1.7;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.status-message.is-info {
+  color: #17405d;
+  background: #eef5fb;
+  border-color: #c7dff0;
+}
+
+.status-message.is-success {
+  color: #1f5f3c;
+  background: #effaf3;
+  border-color: #ccead6;
+}
+
+.status-message.is-error {
+  color: #8a1f1f;
+  background: #fff4f4;
+  border-color: #f1c4c4;
+}
