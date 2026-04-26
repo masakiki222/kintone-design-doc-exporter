@@ -20,6 +20,11 @@ kintone-design-doc-exporter/
 │   └── config.css
 ├── html/
 │   └── config.html
+├── image/
+│   ├── icon.png
+│   └── icon.svg
+├── scripts/
+│   └── package-plugin.sh
 └── js/
     ├── config.js
     └── desktop.js
@@ -56,10 +61,30 @@ CLI版で生成する例:
 kintone-plugin-packer --ppk /Users/masaki/Documents/kintone_plugin_ppk/secrets/kintone-design-doc-exporter-source.pikfdfclhfeodmelolamkkphpacankgp.private.ppk .
 ```
 
+## 署名済みプラグイン ZIP の生成
+
+このプロジェクトでは、アップロード用の署名済みZIPはファイル名の末尾に `manifest.json` の `version` を付けます。
+
+```text
+kintone-design-doc-exporter-plugin-v{version}.zip
+```
+
+生成は次のスクリプトを使います。
+
+```bash
+./scripts/package-plugin.sh
+```
+
+たとえば `manifest.json` の `version` が `0.2.1` の場合、次のファイルを生成します。
+
+```text
+/Users/masaki/Documents/Codex/kintone-design-doc-exporter-plugin-v0.2.1.zip
+```
+
 ## 導入手順
 
-1. `plugin-packer` で署名済みの `plugin.zip` を生成する
-2. `kintone` のシステム管理でその `plugin.zip` を読み込む
+1. `./scripts/package-plugin.sh` で署名済みのプラグインZIPを生成する
+2. `kintone` のシステム管理でそのプラグインZIPを読み込む
 3. 対象アプリにこのプラグインを追加する
 4. プラグイン設定画面で出力オプションを保存する
 5. アプリを更新する
