@@ -6,6 +6,7 @@
 
 - プラグイン設定画面から `保存済み設定で出力` を実行
 - フィールド定義、レイアウト、一覧、プロセス管理を設計書化
+- ルックアップや関連レコード一覧など、他アプリとの関係性を整理
 - 必要に応じて権限、通知、カスタマイズ、アプリ管理者メモも出力
 - `本番反映済み設定` と `未反映を含むプレビュー設定` を切り替え
 - 必要なら各セクションに `生データ (JSON)` を添付
@@ -75,10 +76,10 @@ kintone-design-doc-exporter-plugin-v{version}.zip
 ./scripts/package-plugin.sh
 ```
 
-たとえば `manifest.json` の `version` が `0.2.1` の場合、次のファイルを生成します。
+たとえば `manifest.json` の `version` が `0.2.2` の場合、次のファイルを生成します。
 
 ```text
-/Users/masaki/Documents/Codex/kintone-design-doc-exporter-plugin-v0.2.1.zip
+/Users/masaki/Documents/Codex/kintone-design-doc-exporter-plugin-v0.2.2.zip
 ```
 
 ## 導入手順

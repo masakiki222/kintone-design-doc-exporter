@@ -413,6 +413,128 @@
     );
   };
 
+  // ルックアップや関連レコード一覧の参照先アプリ情報を読みやすくまとめる。
+  const renderRelatedApp = (relatedApp) => {
+    if (!relatedApp) {
+      return '-';
+    }
+
+    const lines = [];
+    if (relatedApp.app !== undefined && relatedApp.app !== null) {
+      lines.push('アプリID: ' + code(relatedApp.app));
+    }
+    if (relatedApp.code) {
+      lines.push('アプリコード: ' + code(relatedApp.code));
+    }
+    return listAsLines(lines);
+  };
+
+  // フィールド同士の対応関係は「自アプリ側 ← 参照先側」で表す。
+  const renderFieldPair = (fieldCode, relatedFieldCode) => {
+    return code(fieldCode || '-') + ' ← ' + code(relatedFieldCode || '-');
+  };
+
+  const renderLookupMapping = (lookup) => {
+    const mappings = toArray(lookup && lookup.fieldMappings).map((mapping) =>
+      renderFieldPair(mapping.field, mapping.relatedField)
+    );
+
+    return listAsLines(mappings);
+  };
+
+  const renderLookupPickerFields = (lookup) => {
+    return listAsLines(
+      toArray(lookup && lookup.lookupPickerFields).map((fieldCode) =>
+        code(fieldCode)
+      )
+    );
+  };
+
+  // フィールド定義から、他アプリとの関係性だけを抜き出す。
+  const collectExternalAppRelations = (properties) => {
+    const fields = flattenFields(properties || {});
+    const relations = [];
+
+    fields.forEach((field) => {
+      if (field.details && field.details.lookup) {
+        const lookup = field.details.lookup;
+        relations.push({
+          type: 'ルックアップ',
+          label: field.label,
+          code: field.code,
+          relatedApp: lookup.relatedApp,
+          key: renderFieldPair(field.code, lookup.relatedKeyField),
+          items: renderLookupMapping(lookup),
+          pickerFields: renderLookupPickerFields(lookup),
+          filterCond: lookup.filterCond,
+          sort: lookup.sort
+        });
+      }
+
+      if (field.details && field.details.referenceTable) {
+        const referenceTable = field.details.referenceTable;
+        const condition = referenceTable.condition || {};
+        relations.push({
+          type: '関連レコード一覧',
+          label: field.label,
+          code: field.code,
+          relatedApp: referenceTable.relatedApp,
+          key: renderFieldPair(condition.field, condition.relatedField),
+          items: listAsLines(
+            toArray(referenceTable.displayFields).map((fieldCode) =>
+              code(fieldCode)
+            )
+          ),
+          pickerFields: '-',
+          filterCond: referenceTable.filterCond,
+          sort: referenceTable.sort
+        });
+      }
+    });
+
+    return relations;
+  };
+
+  // 他アプリとの関係性を独立セクションとして表示する。
+  const renderExternalAppRelationsSection = (sectionResult) => {
+    if (!sectionResult.ok) {
+      return renderErrorCard(sectionResult);
+    }
+
+    const relations = collectExternalAppRelations(
+      sectionResult.data.properties || {}
+    );
+    const rows = relations.map((relation) => [
+      textOrDash(relation.type),
+      textOrDash(relation.label) + '<br>' + code(relation.code),
+      renderRelatedApp(relation.relatedApp),
+      relation.key,
+      relation.items,
+      relation.pickerFields,
+      multilineOrDash(relation.filterCond),
+      multilineOrDash(relation.sort)
+    ]);
+
+    return renderTable(
+      [
+        '種別',
+        'フィールド',
+        '参照先アプリ',
+        'キー / 条件',
+        'コピー / 表示項目',
+        '取得時の表示項目',
+        '絞り込み条件',
+        'ソート'
+      ],
+      rows,
+      {
+        tableClassName: 'table--relations',
+        wrapClassName: 'table-wrap--relations',
+        colWidths: ['11%', '15%', '14%', '15%', '16%', '12%', '9%', '8%']
+      }
+    );
+  };
+
   // レイアウトツリーの各ノードに表示するラベルを作る。
   const layoutItemLabel = (item) => {
     if (item.type === 'ROW') {
@@ -1077,11 +1199,12 @@
     html += 'code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#eef3f8;padding:2px 6px;border-radius:6px;}';
     html += 'code{display:inline-block;max-width:100%;overflow-wrap:anywhere;}';
     html += '.muted{color:#637487;}';
-    html += '.table-wrap--summary table,.table-wrap--fields table{table-layout:fixed;}';
+    html += '.table-wrap--summary table,.table-wrap--fields table,.table-wrap--relations table{table-layout:fixed;}';
     html += '.table--summary td:first-child{white-space:nowrap;word-break:keep-all;}';
     html += '.table--summary td:last-child{white-space:normal;}';
     html += '.table--fields th,.table--fields td:nth-child(1),.table--fields td:nth-child(4){word-break:keep-all;}';
     html += '.table--fields td:nth-child(5),.table--fields td:nth-child(6){text-align:center;}';
+    html += '.table--relations td:nth-child(1){white-space:nowrap;word-break:keep-all;}';
     html += '.layout-tree{margin:0;padding-left:20px;}';
     html += '.layout-tree li{margin:10px 0;}';
     html +=
@@ -1125,6 +1248,10 @@
     html +=
       '<section><h2>フィールド一覧</h2>' +
       renderFieldsSection(results.formFields, config.includeRawJson) +
+      '</section>';
+    html +=
+      '<section><h2>他アプリ連携</h2>' +
+      renderExternalAppRelationsSection(results.formFields) +
       '</section>';
     html +=
       '<section><h2>レイアウト</h2>' +
