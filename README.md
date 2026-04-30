@@ -50,16 +50,17 @@ zip -r ../kintone-design-doc-exporter-source.zip manifest.json js css html image
 - Web版: `https://plugin-packer.kintone.dev/`
 - CLI版: `@kintone/plugin-packer`
 
-既存のプラグインを更新する場合は、プラグインIDを維持するために次の `ppk` ファイルを使用します。
+既存のプラグインを更新する場合は、プラグインIDを維持するために同じ `ppk` ファイルを使用します。
+秘密鍵なので、`.ppk` ファイルはリポジトリに含めないでください。
 
-```text
-/Users/masaki/Documents/kintone_plugin_ppk/secrets/kintone-design-doc-exporter-source.pikfdfclhfeodmelolamkkphpacankgp.private.ppk
+```bash
+export KINTONE_PLUGIN_PPK=/path/to/existing.private.ppk
 ```
 
 CLI版で生成する例:
 
 ```bash
-kintone-plugin-packer --ppk /Users/masaki/Documents/kintone_plugin_ppk/secrets/kintone-design-doc-exporter-source.pikfdfclhfeodmelolamkkphpacankgp.private.ppk .
+kintone-plugin-packer --ppk "$KINTONE_PLUGIN_PPK" .
 ```
 
 ## 署名済みプラグイン ZIP の生成
@@ -73,13 +74,14 @@ kintone-design-doc-exporter-plugin-v{version}.zip
 生成は次のスクリプトを使います。
 
 ```bash
+export KINTONE_PLUGIN_PPK=/path/to/existing.private.ppk
 ./scripts/package-plugin.sh
 ```
 
 たとえば `manifest.json` の `version` が `0.2.4` の場合、次のファイルを生成します。
 
 ```text
-/Users/masaki/Documents/Codex/kintone-design-doc-exporter-plugin-v0.2.4.zip
+../kintone-design-doc-exporter-plugin-v0.2.4.zip
 ```
 
 ## 導入手順

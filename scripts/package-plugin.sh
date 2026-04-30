@@ -3,8 +3,13 @@ set -eu
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 VERSION=$(node -e "console.log(require(process.argv[1]).version)" "$ROOT_DIR/manifest.json")
-PPK_FILE="/Users/masaki/Documents/kintone_plugin_ppk/secrets/kintone-design-doc-exporter-source.pikfdfclhfeodmelolamkkphpacankgp.private.ppk"
+PPK_FILE=${KINTONE_PLUGIN_PPK:-}
 OUT_FILE="$ROOT_DIR/../kintone-design-doc-exporter-plugin-v$VERSION.zip"
+
+if [ -z "$PPK_FILE" ]; then
+  printf '%s\n' "KINTONE_PLUGIN_PPK must point to an existing .ppk file." >&2
+  exit 1
+fi
 
 npm exec --yes @kintone/plugin-packer -- \
   --ppk "$PPK_FILE" \
