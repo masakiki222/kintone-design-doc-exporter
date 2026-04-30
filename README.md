@@ -1,109 +1,42 @@
 # kintone Design Doc Exporter
 
-`kintone` のアプリ設定を取得し、`HTML` 形式の設計書としてダウンロードするサンプルプラグインです。
+`kintone` のアプリ設定を取得し、`HTML` 形式の設計書としてダウンロードするプラグインです。
 
 ## できること
 
-- プラグイン設定画面から `保存済み設定で出力` を実行
 - フィールド定義、レイアウト、一覧、プロセス管理を設計書化
 - ルックアップや関連レコード一覧など、他アプリとの関係性を整理
-- 必要に応じて権限、通知、カスタマイズ、アプリ管理者メモも出力
+- 権限、通知、カスタマイズ、アプリ管理者メモを必要に応じて出力
 - `本番反映済み設定` と `未反映を含むプレビュー設定` を切り替え
-- 必要なら各セクションに `生データ (JSON)` を添付
+- 各セクションに `生データ (JSON)` を添付
+- 出力した設計書を `HTML` ファイルとしてダウンロード
 
-## ファイル構成
+## インストール
 
-```text
-kintone-design-doc-exporter/
-├── manifest.json
-├── README.md
-├── css/
-│   └── config.css
-├── html/
-│   └── config.html
-├── image/
-│   ├── icon.png
-│   └── icon.svg
-├── scripts/
-│   └── package-plugin.sh
-└── js/
-    ├── config.js
-    └── desktop.js
-```
+GitHub Releases から最新の署名済みプラグインZIPをダウンロードし、`kintone` のプラグイン管理画面で読み込んでください。
 
-## 重要
+`kintone` に読み込めるのは、`plugin-packer` で署名されたプラグインZIPです。このリポジトリのソースコードをそのままZIP化したものは、プラグインとして直接読み込めません。
 
-`kintone` に直接インポートできるのは、単純なZIPではなく `plugin-packer` で署名済みの `plugin.zip` です。  
-このフォルダとここで作るZIPは、`plugin-packer` に渡すためのソースです。
+## 使い方
 
-## ソース ZIP 化
+1. `kintone` のシステム管理でプラグインZIPを読み込む
+2. 対象アプリにこのプラグインを追加する
+3. プラグイン設定画面で出力オプションを保存する
+4. アプリを更新する
+5. プラグイン設定画面の `保存済み設定で出力` ボタンを押す
 
-`plugin-packer` の Web 版に渡しやすいように、ソース一式をZIPにまとめる場合は次の形です。
+## 出力について
 
-```bash
-cd /path/to/kintone-design-doc-exporter
-zip -r ../kintone-design-doc-exporter-source.zip manifest.json js css html image
-```
+設計書は `HTML` ファイルとしてダウンロードされます。そのまま共有したり、ブラウザの印刷機能で `PDF` に変換できます。
 
-その後、次のいずれかで署名済みZIPを作成します。
+フォームに未保存の変更がある場合でも、出力には保存済みの設定だけを使います。設定を変えた場合は、先に `設定を保存` を実行してください。
 
-- Web版: `https://plugin-packer.kintone.dev/`
-- CLI版: `@kintone/plugin-packer`
+## 注意事項
 
-既存のプラグインを更新する場合は、プラグインIDを維持するために同じ `ppk` ファイルを使用します。
-秘密鍵なので、`.ppk` ファイルはリポジトリに含めないでください。
+- 通知や権限の対象者は、コード値を中心に出力します。
+- 一部の設定取得に失敗した場合でも、取得できた範囲で設計書を生成します。
+- このプラグインは、`kintone` 上で動作するプラグインから `Session Authentication` で設定情報を取得する前提です。
 
-```bash
-export KINTONE_PLUGIN_PPK=/path/to/existing.private.ppk
-```
+## 開発者向け
 
-CLI版で生成する例:
-
-```bash
-kintone-plugin-packer --ppk "$KINTONE_PLUGIN_PPK" .
-```
-
-## 署名済みプラグイン ZIP の生成
-
-このプロジェクトでは、アップロード用の署名済みZIPはファイル名の末尾に `manifest.json` の `version` を付けます。
-
-```text
-kintone-design-doc-exporter-plugin-v{version}.zip
-```
-
-生成は次のスクリプトを使います。
-
-```bash
-export KINTONE_PLUGIN_PPK=/path/to/existing.private.ppk
-./scripts/package-plugin.sh
-```
-
-たとえば `manifest.json` の `version` が `0.2.4` の場合、次のファイルを生成します。
-
-```text
-../kintone-design-doc-exporter-plugin-v0.2.4.zip
-```
-
-## 導入手順
-
-1. `./scripts/package-plugin.sh` で署名済みのプラグインZIPを生成する
-2. `kintone` のシステム管理でそのプラグインZIPを読み込む
-3. 対象アプリにこのプラグインを追加する
-4. プラグイン設定画面で出力オプションを保存する
-5. アプリを更新する
-6. プラグイン設定画面の `保存済み設定で出力` ボタンを押す
-
-## 実装メモ
-
-- 設計書出力は、プラグイン設定画面にある `保存済み設定で出力` ボタンから実行します。
-- フォームに未保存の変更がある場合でも、出力には `保存済み設定` のみを使います。
-- 設計書は `HTML` としてダウンロードされるので、そのまま共有したり、ブラウザの印刷機能で `PDF` に変換できます。
-- 通知や権限の対象者は、まずコード値のまま出力しています。ユーザー名や組織名への変換は、必要に応じて `User API` 連携を追加してください。
-- `Get Customization` など、`API Token` では扱いづらい設定も、`kintone` 上で動くプラグインから `Session Authentication` で取得できる前提のサンプルです。
-
-## 今後の拡張案
-
-- `Markdown` や `Excel` 出力の追加
-- ユーザー/組織/グループコードを表示名に変換
-- 出力対象セクションのさらに細かいON/OFF
-- 設計書を別アプリへ保存して履歴管理
+開発・ビルド・リリース手順は [DEVELOPMENT.md](DEVELOPMENT.md) を参照してください。
